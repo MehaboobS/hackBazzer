@@ -1,121 +1,154 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
+import toast from "react-hot-toast";
 import { FaFacebook, FaGoogle, FaLinkedin, FaMicrosoft } from "react-icons/fa";
 import { login as authLogin } from "../store/authSlice";
 import { useDispatch } from "react-redux";
 
 const Login = () => {
   const dispatch = useDispatch();
-  const navigate=useNavigate();
+  const navigate = useNavigate();
   const [username, setUserName] = useState("");
   const [password, setPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
   const handleClose = () => {
-    console.log("hello i am close method"); // Redirect to Home Page
+    navigate("/");
   };
 
-  const handleClick = async () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSubmitting(true);
     try {
-      setError("");
-      const response = await axios.post("/api/user/login", { username, password });
-      console.log(response);
-      console.log(response.data);
+      const response = await axios.post("/api/user/login", {
+        username: username.trim(),
+        password,
+      });
       dispatch(authLogin(response.data.user));
-      alert(response.data.message);
+      toast.success(response.data.message || "Logged in successfully!");
+      navigate("/");
     } catch (err) {
-      console.error("Login error:", err.response?.data?.message || "Something went wrong");
-      setError(err.response?.data?.message || "Invalid credentials");
+      const message =
+        err.response?.data?.message || "Invalid username or password";
+      setError(message);
+      toast.error(message);
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const handleGoogleLogin = () => {
-    // Redirect to Google login page
     window.location.href = "/api/user/auth/google";
-    navigate('/')
   };
 
   return (
-    <div className="m-4 flex items-center justify-center backdrop-blur-md">
-      {/* Modal Box */}
-      <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full relative">
-        {/* Close Button */}
-        <button 
-          onClick={handleClose} 
-          className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-xl"
+    <div className="flex min-h-[calc(100vh-140px)] items-center justify-center px-4 py-10">
+      <div className="relative w-full max-w-md rounded-2xl border border-gray-200 bg-white p-8 shadow-lg">
+        <button
+          type="button"
+          onClick={handleClose}
+          className="absolute right-4 top-4 text-xl text-gray-400 hover:text-gray-700"
+          aria-label="Close"
         >
           ✕
         </button>
 
-        {/* Heading */}
-        <h2 className="text-2xl font-semibold text-center">Sign in to Final Round AI</h2>
-        <p className="text-gray-500 text-center mt-1">Welcome back! Please sign in to continue</p>
+        <h2 className="text-center text-2xl font-bold text-gray-900">
+          Sign in to HackBazzer
+        </h2>
+        <p className="mt-1 text-center text-sm text-gray-500">
+          Welcome back! Sign in to buy or sell projects
+        </p>
 
-        {/* Social Login Buttons */}
-        <div className="flex justify-center space-x-3 mt-4">
-          <button className="bg-gray-200 p-2 rounded-md hover:bg-gray-300">
-            <FaFacebook className="text-blue-600 text-lg" />
-          </button>
-          <button 
-            onClick={handleGoogleLogin} 
-            className="bg-gray-200 p-2 rounded-md hover:bg-gray-300"
+        <div className="mt-5 flex justify-center space-x-3">
+          <button
+            type="button"
+            className="rounded-md bg-gray-100 p-2.5 hover:bg-gray-200"
           >
-            <FaGoogle className="text-red-500 text-lg" />
+            <FaFacebook className="text-lg text-blue-600" />
           </button>
-          <button className="bg-gray-200 p-2 rounded-md hover:bg-gray-300">
-            <FaLinkedin className="text-blue-500 text-lg" />
+          <button
+            type="button"
+            onClick={handleGoogleLogin}
+            className="rounded-md bg-gray-100 p-2.5 hover:bg-gray-200"
+          >
+            <FaGoogle className="text-lg text-red-500" />
           </button>
-          <button className="bg-gray-200 p-2 rounded-md hover:bg-gray-300">
-            <FaMicrosoft className="text-green-500 text-lg" />
+          <button
+            type="button"
+            className="rounded-md bg-gray-100 p-2.5 hover:bg-gray-200"
+          >
+            <FaLinkedin className="text-lg text-blue-500" />
+          </button>
+          <button
+            type="button"
+            className="rounded-md bg-gray-100 p-2.5 hover:bg-gray-200"
+          >
+            <FaMicrosoft className="text-lg text-green-500" />
           </button>
         </div>
 
-        {/* Separator */}
-        <div className="flex items-center my-4">
-          <hr className="flex-grow border-gray-300" />
-          <span className="mx-2 text-gray-400">or</span>
-          <hr className="flex-grow border-gray-300" />
+        <div className="my-5 flex items-center">
+          <hr className="flex-grow border-gray-200" />
+          <span className="mx-3 text-xs uppercase text-gray-400">or</span>
+          <hr className="flex-grow border-gray-200" />
         </div>
 
-        {/* Email Input */}
-        <div>
-          <label className="block text-gray-700 mb-1">Username</label>
-          <input
-            type="text"
-            value={username}
-            onChange={(e) => setUserName(e.target.value)}
-            placeholder="Enter your email"
-            className="w-full border rounded-md p-2 focus:ring focus:ring-orange-300 outline-none"
-          />
-        </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              Username
+            </label>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUserName(e.target.value)}
+              placeholder="Enter your username"
+              required
+              className="w-full rounded-lg border border-gray-300 p-2.5 text-sm outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200"
+            />
+          </div>
 
-        {/* Password Input */}
-        <div>
-          <label className="block text-gray-700 mb-1">Password</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Enter your password"
-            className="w-full border rounded-md p-2 focus:ring focus:ring-orange-300 outline-none"
-          />
-        </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              Password
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password"
+              required
+              className="w-full rounded-lg border border-gray-300 p-2.5 text-sm outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200"
+            />
+          </div>
 
-        {/* Continue Button */}
-        <button 
-          onClick={handleClick}
-          className="w-full bg-orange-500 text-white p-2 rounded-md mt-4 hover:bg-orange-600 transition"
-        >
-          Continue →
-        </button>
+          {error && (
+            <p className="rounded-md bg-red-50 p-2.5 text-center text-sm text-red-600">
+              {error}
+            </p>
+          )}
 
-        {/* Error Message */}
-        {error && <p className="text-red-500 text-center mt-2">{error}</p>}
+          <button
+            type="submit"
+            disabled={submitting}
+            className="w-full rounded-lg bg-gradient-to-r from-purple-600 to-pink-500 p-2.5 text-sm font-semibold text-white transition hover:opacity-95 disabled:opacity-60"
+          >
+            {submitting ? "Signing in..." : "Continue →"}
+          </button>
+        </form>
 
-        {/* Signup Link */}
-        <p className="text-center text-gray-500 mt-3">
-          Don't have an account? <a href="#" className="text-orange-500 font-semibold">Sign up</a>
+        <p className="mt-4 text-center text-sm text-gray-500">
+          Don&apos;t have an account?{" "}
+          <Link
+            to="/user/signup"
+            className="font-semibold text-purple-600 hover:underline"
+          >
+            Sign up
+          </Link>
         </p>
       </div>
     </div>

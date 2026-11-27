@@ -29,9 +29,12 @@
 // }
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import toast from 'react-hot-toast';
 
 function ProjectForm() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -40,8 +43,9 @@ function ProjectForm() {
     price: '',
     category: '',
     image: null,
-    createdBy: '', // Replace this with a real user ID
+    createdBy: '',
   });
+  const [submitting, setSubmitting] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -54,20 +58,26 @@ function ProjectForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSubmitting(true);
     const data = new FormData();
     for (let key in formData) {
       data.append(key, formData[key]);
     }
 
     try {
-      const response = await axios.post('/api/listings/create', data, {
+      await axios.post('/api/listings/create', data, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-      console.log('Project uploaded:', response.data);
-      alert('Project submitted successfully!');
+      toast.success('Project published to HackBazzer!');
+      navigate('/market');
     } catch (err) {
-      console.error('Error uploading project:', err);
-      alert('Failed to submit project.');
+      const msg =
+        err.response?.status === 401
+          ? 'Please sign in before publishing a project.'
+          : err.response?.data?.message || 'Failed to submit project.';
+      toast.error(msg);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -133,9 +143,10 @@ function ProjectForm() {
         />
         <button
           type="submit"
-          className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
+          disabled={submitting}
+          className="w-full rounded bg-blue-600 py-2 text-white transition hover:bg-blue-700 disabled:opacity-60"
         >
-          Submit Project
+          {submitting ? 'Submitting...' : 'Submit Project'}
         </button>
       </form>
     </div>

@@ -16,7 +16,7 @@ const User=require("./models/User")
 const bodyParser = require("body-parser");
 const userRoute=require("./Routes/User")
 const listingRoute=require("./Routes/Project");
-const Razorpay = require('razorpay')
+const { router: paymentRoute, createOrderHandler } = require("./Routes/Payment");
 
 // const cloudinary = require("./utils/cloudinary");
 // const upload = require("./middleware/multer");
@@ -31,11 +31,6 @@ cloudinary.config({
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
-// configuring the payment 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-     key_secret: process.env.REZORPAY_KEY_SECRET
-  })
 // Configure multer storage with Cloudinary
 // const storage = multer.diskStorage({
 //   'destination':'mainUploader'
@@ -109,26 +104,9 @@ passport.use(new GoogleStrategy({
 passport.serializeUser(User.serializeUser()) 
 passport.deserializeUser(User.deserializeUser()) 
 
-// Endpoint to create an order
-app.post('/api/create-order', async (req, res) => {
-  const { amount, currency } = req.body;
-  try {
-    // Razorpay expects amount in paise
-    const options = {
-      amount: amount * 100,       // Convert INR to paise
-      currency: currency,
-      receipt: 'order_rcptid_11', // You can make this dynamic
-    };
-
-    // Create an order using Razorpay API
-    const order = await razorpay.orders.create(options);
-    res.json({ orderId: order.id }); // Send the order ID back to the frontend
-  } catch (error) {
-    console.error('Error creating order:', error);
-    res.status(500).send({ error: 'Error creating order' });
-  }
-});
-// routers of the project
+// payment and project/user routers
+app.post('/api/create-order', createOrderHandler);
+app.use('/api/payments', paymentRoute);
 app.use("/api/listings",listingRoute)
 app.use('/api/user',userRoute);
 

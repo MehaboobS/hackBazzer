@@ -1,67 +1,108 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React from "react";
+import { Link } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import toast from "react-hot-toast";
+import { ShoppingCartIcon } from "@heroicons/react/24/outline";
+import { addToCart } from "../store/cartSlice";
 
-// Card component to display individual project information
 const Card = ({ project }) => {
+  const dispatch = useDispatch();
+  const inCart = useSelector((state) =>
+    state.cart.items.some((item) => item._id === project._id)
+  );
+
+  const handleAddToCart = () => {
+    if (inCart) {
+      toast("Already in your cart");
+      return;
+    }
+    dispatch(addToCart(project));
+    toast.success(`${project.name} added to cart!`);
+  };
+
   return (
-   <Link to={`/singleCard/${project._id}`}>
-     <div className="bg-white rounded-lg shadow-md overflow-hidden h-full flex flex-col">
-      {/* Fixed height image container ensures consistent sizing */}
-      <div className="h-48 w-full overflow-hidden">
-        <img 
+    <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xs transition hover:-translate-y-0.5 hover:shadow-md">
+      <Link to={`/singleCard/${project._id}`} className="block h-48 w-full overflow-hidden">
+        <img
           src={project.image || "/api/placeholder/400/320"}
           alt={project.name}
-          className="w-full h-full object-cover"
+          className="h-full w-full object-cover transition duration-300 hover:scale-105"
         />
-      </div>
-      
-      <div className="p-4 flex flex-col flex-grow">
-        <div className="flex justify-between items-start mb-2">
-          <h3 className="text-xl font-bold text-gray-800 line-clamp-1">{project.name}</h3>
-          <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded whitespace-nowrap ml-2">
+      </Link>
+
+      <div className="flex flex-grow flex-col p-5">
+        <div className="mb-2 flex items-start justify-between gap-2">
+          <Link
+            to={`/singleCard/${project._id}`}
+            className="line-clamp-1 text-lg font-bold text-gray-900 hover:text-purple-700"
+          >
+            {project.name}
+          </Link>
+          <span className="whitespace-nowrap rounded-full bg-purple-50 px-2.5 py-0.5 text-xs font-semibold text-purple-700">
             {project.category}
           </span>
         </div>
-        
-        <p className="text-gray-600 mb-4 line-clamp-3 flex-grow">{project.description}</p>
-        
-        <div className="text-lg font-bold text-gray-900 mb-4">
-          ${project.price.toFixed(2)}
+
+        <p className="mb-4 line-clamp-3 flex-grow text-sm text-gray-600">
+          {project.description}
+        </p>
+
+        <div className="mb-4 flex items-center justify-between">
+          <span className="text-xl font-extrabold text-gray-900">
+            ₹{Number(project.price).toFixed(2)}
+          </span>
+          <span className="text-xs text-gray-400">
+            {new Date(project.createdAt).toLocaleDateString()}
+          </span>
         </div>
-        
-        <div className="flex justify-between gap-2">
-          {project.github && (
-            <a 
-              href={project.github}
-              className="text-sm bg-gray-800 text-white px-3 py-1 rounded flex items-center gap-1 flex-grow text-center justify-center"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0012 2z" />
-              </svg>
-              GitHub
-            </a>
-          )}
-          
-          {project.demo && (
-            <a 
-              href={project.demo}
-              className="text-sm bg-blue-600 text-white px-3 py-1 rounded flex-grow text-center"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Live Demo
-            </a>
-          )}
+
+        <div className="flex gap-2">
+          <Link
+            to={`/singleCard/${project._id}`}
+            className="flex-1 rounded-xl bg-gradient-to-r from-purple-600 to-pink-500 px-3 py-2 text-center text-xs font-semibold text-white transition hover:opacity-95"
+          >
+            Buy / Details
+          </Link>
+          <button
+            type="button"
+            onClick={handleAddToCart}
+            className={`inline-flex items-center justify-center gap-1 rounded-xl border px-3 py-2 text-xs font-semibold transition ${
+              inCart
+                ? "border-green-300 bg-green-50 text-green-700"
+                : "border-gray-300 bg-white text-gray-700 hover:border-purple-300 hover:text-purple-700"
+            }`}
+          >
+            <ShoppingCartIcon className="h-4 w-4" />
+            {inCart ? "In Cart ✓" : "Add to Cart"}
+          </button>
         </div>
-        
-        <div className="mt-4 text-xs text-gray-500">
-          Created {new Date(project.createdAt).toLocaleDateString()}
-        </div>
+
+        {(project.github || project.demo) && (
+          <div className="mt-3 flex gap-2 border-t border-gray-100 pt-3">
+            {project.github && (
+              <a
+                href={project.github}
+                className="flex-1 rounded-lg bg-gray-100 px-2.5 py-1.5 text-center text-xs font-medium text-gray-700 hover:bg-gray-200"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                GitHub
+              </a>
+            )}
+            {project.demo && (
+              <a
+                href={project.demo}
+                className="flex-1 rounded-lg bg-blue-50 px-2.5 py-1.5 text-center text-xs font-medium text-blue-700 hover:bg-blue-100"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Live Demo
+              </a>
+            )}
+          </div>
+        )}
       </div>
     </div>
-   </Link>
   );
 };
 

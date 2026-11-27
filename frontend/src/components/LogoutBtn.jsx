@@ -1,35 +1,33 @@
 import React from "react";
-import { useState,useEffect } from 'react'
-// import authService from "../../appwrite/auth";
-import {logout} from '../store/authSlice'
 import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
-export default function LogoutBtn({authValueState,setAuthValueState}){
-    const dispatch=useDispatch()
-   const handleClick=async()=>{
-        // authService.logout().then(()=>{
-        //     dispatch(logout())
-        // })
-       try{
-        const response=await axios.get('/api/user/lg');
-        if(response){
-            dispatch(logout());
-            setAuthValueState(!authValueState);
-            alert(response.data.message)
-        }
-       }catch(err){
-        console.log(err)
-       }
+import toast from "react-hot-toast";
+import { logout } from "../store/authSlice";
 
-   }
-    return(
-        <>
-            <button
-                onClick={handleClick}
-                className="block rounded-lg px-3 py-2.5 text-base font-semibold text-gray-900 hover:bg-gray-50"
-                >
-                Log out
-            </button>
-        </>
-    )
+export default function LogoutBtn({ onAfterLogout }) {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  const handleClick = async () => {
+    try {
+      const response = await axios.get("/api/user/lg");
+      dispatch(logout());
+      toast.success(response.data?.message || "Logged out successfully!");
+      onAfterLogout?.();
+      navigate("/");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to log out");
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      className="rounded-lg border border-gray-200 px-3.5 py-1.5 text-sm font-semibold text-gray-800 transition hover:bg-gray-100"
+    >
+      Log out
+    </button>
+  );
 }

@@ -36,37 +36,72 @@ router.get("/auth/google/callback",
     }
   }
 );
-router.post("/signup",async (req,res,next)=>{
-    console.log("Request successFully accepted");
-    console.log(req.body.data);
+router.post("/signup", async (req, res, next) => {
     try {
-        const { name : username, email, password } = req.body.data; 
-        console.log(username,email,password)
+        const payload = req.body?.data || req.body || {};
+        const username = (payload.name || payload.username || "").trim();
+        const email = (payload.email || "").trim();
+        const password = payload.password;
+
+        if (!username || !email || !password) {
+            return res.status(400).json({ message: "Name, email, and password are required" });
+        }
+
         const user = new User({ username, email });
-    
-        await User.register(user, password); 
-        console.log("user registered successFully")
-    // Passport handles password hashing
-        res.status(201).json({ message: 'User registered successfully' });
-      } catch (err) {
-        res.status(400).json({ message: err.message });
-      }
+        const registeredUser = await User.register(user, password);
+
+        req.logIn(registeredUser, (err) => {
+            if (err) return next(err);
+            return res.status(201).json({
+                message: "User registered successfully",
+                user: {
+                    _id: registeredUser._id,
+                    username: registeredUser.username,
+                    email: registeredUser.email,
+                },
+            });
+        });
+    } catch (err) {
+        const status = err.name === "UserExistsError" ? 409 : 400;
+        return res.status(status).json({ message: err.message });
+    }
 })
 
 router.post("/login", (req, res, next) => {
-    console.log("request accepted")
-    console.log(req.body)
     passport.authenticate("local", (err, user, info) => {
-        console.log(user)
-        if (err) return next(err); // Handle server errors
-        if (!user) return res.status(401).json({ message: info.message }); // Handle incorrect credentials
+        if (err) return next(err);
+        if (!user) {
+            return res.status(401).json({
+                message: info?.message || "Invalid username or password",
+            });
+        }
 
-        // Log in the user
-        req.logIn(user, (err) => {
-            if (err) return next(err);
-            return res.json({ message: "Logged in successfully", user });
+        req.logIn(user, (loginErr) => {
+            if (loginErr) return next(loginErr);
+            return res.json({
+                message: "Logged in successfully",
+                user: {
+                    _id: user._id,
+                    username: user.username,
+                    email: user.email,
+                },
+            });
         });
     })(req, res, next);
+});
+
+router.get("/me", (req, res) => {
+    if (req.isAuthenticated && req.isAuthenticated() && req.user) {
+        return res.status(200).json({
+            authenticated: true,
+            user: {
+                _id: req.user._id,
+                username: req.user.username,
+                email: req.user.email,
+            },
+        });
+    }
+    return res.status(200).json({ authenticated: false, user: null });
 });
   
 router.get('/lg',(req,res,next)=>{
@@ -75,9 +110,7 @@ router.get('/lg',(req,res,next)=>{
         if(err){
             return next(err)
         }else{
-            // req.flash("success","logged successfully")
-            // res.redirect('/listings')
-            res.status(201).json({ message: 'User logged-out successfully' });
+            res.status(200).json({ message: 'User logged-out successfully' });
         }
     })
 })
