@@ -1,17 +1,34 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import toast from "react-hot-toast";
 import { ShoppingCartIcon } from "@heroicons/react/24/outline";
 import { addToCart } from "../store/cartSlice";
 
 const Card = ({ project }) => {
+  const navigate = useNavigate();
   const dispatch = useDispatch();
   const inCart = useSelector((state) =>
     state.cart.items.some((item) => item._id === project._id)
   );
 
-  const handleAddToCart = () => {
+  const detailsPath = `/singleCard/${project._id}`;
+
+  const handleCardClick = (e) => {
+    if (e.target.closest("a, button")) return;
+    navigate(detailsPath);
+  };
+
+  const handleCardKeyDown = (e) => {
+    if (e.target !== e.currentTarget) return;
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      navigate(detailsPath);
+    }
+  };
+
+  const handleAddToCart = (e) => {
+    e.stopPropagation();
     if (inCart) {
       toast("Already in your cart");
       return;
@@ -21,23 +38,26 @@ const Card = ({ project }) => {
   };
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xs transition hover:-translate-y-0.5 hover:shadow-md">
-      <Link to={`/singleCard/${project._id}`} className="block h-48 w-full overflow-hidden">
+    <div
+      role="link"
+      tabIndex={0}
+      onClick={handleCardClick}
+      onKeyDown={handleCardKeyDown}
+      className="flex h-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xs transition hover:-translate-y-0.5 hover:border-purple-300 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+    >
+      <div className="h-48 w-full overflow-hidden">
         <img
           src={project.image || "/api/placeholder/400/320"}
           alt={project.name}
           className="h-full w-full object-cover transition duration-300 hover:scale-105"
         />
-      </Link>
+      </div>
 
       <div className="flex flex-grow flex-col p-5">
         <div className="mb-2 flex items-start justify-between gap-2">
-          <Link
-            to={`/singleCard/${project._id}`}
-            className="line-clamp-1 text-lg font-bold text-gray-900 hover:text-purple-700"
-          >
+          <h3 className="line-clamp-1 text-lg font-bold text-gray-900 hover:text-purple-700">
             {project.name}
-          </Link>
+          </h3>
           <span className="whitespace-nowrap rounded-full bg-purple-50 px-2.5 py-0.5 text-xs font-semibold text-purple-700">
             {project.category}
           </span>
@@ -58,7 +78,7 @@ const Card = ({ project }) => {
 
         <div className="flex gap-2">
           <Link
-            to={`/singleCard/${project._id}`}
+            to={detailsPath}
             className="flex-1 rounded-xl bg-gradient-to-r from-purple-600 to-pink-500 px-3 py-2 text-center text-xs font-semibold text-white transition hover:opacity-95"
           >
             Buy / Details
